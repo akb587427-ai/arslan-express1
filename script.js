@@ -1,173 +1,30 @@
-/*
- * Arslan Express — site behaviour
- * -------------------------------
- * Responsibilities:
- *   1. Resolve contact links from window.ARSLAN_CONFIG.
- *   2. Drive the mobile navigation.
- *   3. Turn the booking form into a pre-filled WhatsApp message.
- *
- * The site has no backend. Nothing is stored or submitted to a server:
- * the booking form only prepares a message the visitor sends themselves.
- */
-(() => {
-  "use strict";
-
-  const config = window.ARSLAN_CONFIG || {};
-  const digits = (value) => String(value || "").replace(/\D/g, "");
-
-  /* Accepts Pakistani numbers in E.164 (923XXXXXXXXX) or local 03XXXXXXXXX form. */
-  const toE164 = (value) => {
-    const raw = digits(value);
-    if (/^92\d{10}$/.test(raw)) return raw;
-    if (/^0\d{10}$/.test(raw)) return `92${raw.slice(1)}`;
-    if (/^\d{10}$/.test(raw)) return `92${raw}`;
-    return "";
-  };
-
-  const primaryNumber = toE164(config.whatsappNumber);
-  const callNumber = toE164(config.callNumber);
-  const alternateNumber = toE164(config.alternateWhatsappNumber);
-  const businessName = config.businessName || "Arslan Express";
-  const greeting =
-    config.greeting || `Assalam-o-Alaikum ${businessName}. I would like to ask about your services.`;
-
-  const whatsappUrl = (target, message) =>
-    `https://wa.me/${target}?text=${encodeURIComponent(message)}`;
-
-  const byId = (id) => document.getElementById(id);
-
-  /* ---------------------------------------------------------------- links */
-
-  const setWhatsappLink = (id, target, message) => {
-    const link = byId(id);
-    if (!link) return;
-    if (!target) {
-      link.hidden = true;
-      return;
-    }
-    link.href = whatsappUrl(target, message);
-  };
-
-  setWhatsappLink("bookingWhatsApp", primaryNumber, greeting);
-  setWhatsappLink("footerWhatsApp", primaryNumber, greeting);
-  setWhatsappLink("alternateWhatsApp", alternateNumber, greeting);
-
-  const callLink = byId("callArslan");
-  if (callLink) {
-    if (callNumber) callLink.href = `tel:+${callNumber}`;
-    else callLink.hidden = true;
-  }
-
-  /* ----------------------------------------------------------- navigation */
-
-  const menuToggle = byId("menuToggle");
-  const nav = byId("mainNav");
-
-  if (menuToggle && nav) {
-    const setMenu = (open) => {
-      nav.classList.toggle("open", open);
-      menuToggle.setAttribute("aria-expanded", String(open));
-      menuToggle.textContent = open ? "\u00d7" : "\u2630";
-    };
-
-    menuToggle.addEventListener("click", () =>
-      setMenu(!nav.classList.contains("open"))
-    );
-
-    nav.querySelectorAll("a").forEach((link) =>
-      link.addEventListener("click", () => setMenu(false))
-    );
-
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && nav.classList.contains("open")) {
-        setMenu(false);
-        menuToggle.focus();
-      }
-    });
-
-    /* Keep the button state correct when the viewport grows back to desktop. */
-    window.matchMedia("(min-width: 651px)").addEventListener("change", (event) => {
-      if (event.matches) setMenu(false);
-    });
-  }
-
-  /* ------------------------------------------------- service pre-selection */
-
-  const serviceSelect = byId("serviceSelect");
-  document.querySelectorAll("[data-service]").forEach((link) => {
-    link.addEventListener("click", () => {
-      if (!serviceSelect) return;
-      const requested = link.dataset.service;
-      const match = [...serviceSelect.options].find((option) => option.value === requested);
-      if (match) serviceSelect.value = requested;
-    });
-  });
-
-  /* -------------------------------------------------------------- booking */
-
-  const dateInput = byId("bookingDate");
-  if (dateInput) {
-    const now = new Date();
-    const localToday = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-      .toISOString()
-      .slice(0, 10);
-    dateInput.min = localToday;
-  }
-
-  const yearSlot = byId("year");
-  if (yearSlot) yearSlot.textContent = String(new Date().getFullYear());
-
-  const form = byId("bookingForm");
-  const status = byId("formMessage");
-
-  const setStatus = (message, isError = false) => {
-    if (!status) return;
-    status.textContent = message;
-    status.classList.toggle("form-message--error", isError);
-    status.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
-
-  if (form) {
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-
-      if (!primaryNumber) {
-        setStatus(
-          "Booking is temporarily unavailable: the WhatsApp number is not configured in config.js.",
-          true
-        );
-        return;
-      }
-
-      const data = new FormData(form);
-      const value = (key, fallback = "Not specified") =>
-        String(data.get(key) || "").trim() || fallback;
-
-      const lines = [
-        `Assalam-o-Alaikum ${businessName}! I would like to request a booking.`,
-        "",
-        `Name: ${value("name")}`,
-        `Phone: ${value("phone")}`,
-        `Service: ${value("service")}`,
-        `Pickup: ${value("pickup")}`,
-        `Drop-off: ${value("dropoff")}`,
-        `Preferred date: ${value("date", "Flexible")}`,
-        `Preferred time: ${value("time", "Flexible")}`,
-        `Payment preference: ${value("payment")}`,
-        `Details: ${value("details")}`,
-        "",
-        "Please confirm availability, final charges and booking details.",
-        "I understand this is a request, not a confirmed booking."
-      ];
-
-      if (byId("referencePhoto")?.files?.length) {
-        lines.splice(-2, 0, "I have a reference photo and will attach it in this chat.");
-      }
-
-      window.open(whatsappUrl(primaryNumber, lines.join("\n")), "_blank", "noopener,noreferrer");
-      setStatus(
-        "WhatsApp is opening with your details. Review the message and press Send. Attach any reference photo in the chat."
-      );
-    });
-  }
-})();
+const cfg=window.ARSLAN_CONFIG||{};
+const cats=window.ARSLAN_CATEGORIES||[], products=window.ARSLAN_PRODUCTS||[];
+const serviceGrid=document.getElementById("serviceGrid"), tabs=document.getElementById("categoryTabs"), grid=document.getElementById("productGrid"), search=document.getElementById("searchBox");
+let active="All";
+let cart={};
+function imgTag(key,alt){return `<img src="assets/img/${key}.jpg" alt="${alt}" loading="lazy" width="900" height="675">`}
+function waUrl(message,alternate=false){const number=alternate?cfg.alternateWhatsApp:cfg.primaryWhatsApp;return `https://wa.me/${number}?text=${encodeURIComponent(message)}`}
+function linkify(){document.querySelectorAll("[data-wa]").forEach(a=>a.href=waUrl(a.dataset.wa));document.querySelectorAll("[data-wa-alt]").forEach(a=>a.href=waUrl(a.dataset.waAlt,true))}
+function renderServices(){serviceGrid.innerHTML=cats.map(c=>`<a class="service-card" href="#catalogue" data-category="${c.name}"><div class="service-image">${imgTag(c.image||"hero",c.name)}</div><h3>${c.name}</h3><p>${c.count} catalogue options　→</p></a>`).join("");serviceGrid.querySelectorAll("[data-category]").forEach(el=>el.addEventListener("click",()=>{active=el.dataset.category;renderTabs();renderProducts()}))}
+function renderTabs(){tabs.innerHTML=["All",...cats.map(c=>c.name)].map(n=>`<button class="tab ${active===n?"active":""}" data-tab="${n}">${n==="All"?"All items":n}</button>`).join("");tabs.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{active=b.dataset.tab;renderTabs();renderProducts()}))}
+function cartQty(name){return cart[name]?.qty||0}
+function renderProducts(){const q=search.value.trim().toLowerCase();const filtered=products.filter(p=>(active==="All"||p.category===active)&&(!q||(p.name+" "+p.category+" "+p.description).toLowerCase().includes(q)));grid.innerHTML=filtered.length?filtered.map(p=>`<article class="product-card"><div class="product-visual">${imgTag(p.image||"hero",p.name)}</div><div class="product-info"><h3>${p.name}</h3><p>${p.description}</p><div class="product-meta"><span>${p.category}</span><span>${p.tag}</span></div><button class="add-cart-btn" type="button" data-add="${encodeURIComponent(p.name)}">${cartQty(p.name)?"＋ Add another":"＋ Add to Cart"}</button></div></article>`).join(""):`<div class="no-results">No matching items found. Try another search.</div>`;
+grid.querySelectorAll("[data-add]").forEach(btn=>btn.addEventListener("click",()=>addToCart(decodeURIComponent(btn.dataset.add))))}
+function addToCart(name){const product=products.find(p=>p.name===name);if(!product)return;if(!cart[name])cart[name]={...product,qty:0};cart[name].qty++;renderCart();renderProducts();openCartToast()}
+function changeQty(name,delta){if(!cart[name])return;cart[name].qty+=delta;if(cart[name].qty<=0)delete cart[name];renderCart();renderProducts()}
+function removeItem(name){delete cart[name];renderCart();renderProducts()}
+function totalQty(){return Object.values(cart).reduce((sum,item)=>sum+item.qty,0)}
+function renderCart(){const count=totalQty(),entries=Object.values(cart);document.getElementById("cartCount").textContent=count;document.getElementById("cartTitleCount").textContent=`(${count})`;document.getElementById("cartTotalItems").textContent=count;const area=document.getElementById("cartItems");if(!entries.length){area.innerHTML='<div class="empty-cart">Your cart is empty. Add products to get started.</div>';return}area.innerHTML=entries.map(item=>`<article class="cart-row"><div class="cart-emoji">${item.emoji}</div><div class="cart-detail"><b>${item.name}</b><small>${item.category}</small><div class="qty-controls"><button type="button" data-minus="${encodeURIComponent(item.name)}" aria-label="Decrease quantity">−</button><span>${item.qty}</span><button type="button" data-plus="${encodeURIComponent(item.name)}" aria-label="Increase quantity">＋</button><button type="button" class="remove-item" data-remove="${encodeURIComponent(item.name)}">Remove</button></div></div></article>`).join("");area.querySelectorAll("[data-minus]").forEach(b=>b.addEventListener("click",()=>changeQty(decodeURIComponent(b.dataset.minus),-1)));area.querySelectorAll("[data-plus]").forEach(b=>b.addEventListener("click",()=>changeQty(decodeURIComponent(b.dataset.plus),1)));area.querySelectorAll("[data-remove]").forEach(b=>b.addEventListener("click",()=>removeItem(decodeURIComponent(b.dataset.remove))))}
+function openCart(){document.getElementById("cartDrawer").classList.add("open");document.getElementById("cartBackdrop").classList.add("show");document.getElementById("cartDrawer").setAttribute("aria-hidden","false")}
+function closeCart(){document.getElementById("cartDrawer").classList.remove("open");document.getElementById("cartBackdrop").classList.remove("show");document.getElementById("cartDrawer").setAttribute("aria-hidden","true")}
+function openCartToast(){const trigger=document.getElementById("cartTrigger");trigger.classList.add("bump");setTimeout(()=>trigger.classList.remove("bump"),250)}
+function checkout(){const entries=Object.values(cart);if(!entries.length){openCart();return}const lines=entries.map((item,i)=>`${i+1}. ${item.name} | Qty: ${item.qty} | Category: ${item.category}`).join("\n");const message=`Hello Arslan Express! I would like to order these items:\n\n${lines}\n\nTotal items: ${totalQty()}\nPlease confirm prices, availability, delivery charges and estimated delivery time.`;window.open(waUrl(message),"_blank","noopener");}
+search.addEventListener("input",renderProducts);
+document.getElementById("menuToggle").addEventListener("click",()=>document.getElementById("nav").classList.toggle("open"));
+document.querySelectorAll("#nav a").forEach(a=>a.addEventListener("click",()=>document.getElementById("nav").classList.remove("open")));
+document.getElementById("cartTrigger").addEventListener("click",openCart);
+document.getElementById("closeCart").addEventListener("click",closeCart);
+document.getElementById("cartBackdrop").addEventListener("click",closeCart);
+document.getElementById("checkoutCart").addEventListener("click",checkout);
+renderServices();renderTabs();renderProducts();renderCart();linkify();
