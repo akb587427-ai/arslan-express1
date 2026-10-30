@@ -25,8 +25,16 @@
 .cart-footer{border-top:1px solid #e5edf7;padding-top:15px}.cart-summary{display:flex;justify-content:space-between;font-size:14px;color:#183454}.cart-disclaimer{font-size:11px;line-height:1.5;color:#718198}.checkout-btn{width:100%;border:0;border-radius:10px;background:#05a85b;color:white;padding:15px;font:800 14px "DM Sans",sans-serif;cursor:pointer}
 @media(max-width:700px){.nav-cta{display:none}.cart-trigger{padding:9px 10px;font-size:11px}.cart-drawer{padding:18px}}
 
-/* Real photography in service and product cards */
-.service-image img,.product-visual img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .45s ease}
-.service-card:hover .service-image img,.product-card:hover .product-visual img{transform:scale(1.06)}
-.service-image,.product-visual{overflow:hidden}
-@media(max-width:700px){.service-image,.product-visual{height:105px}}
+/* Photo correction: dedicated owner portrait and distinct local product artwork */
+.owner-profile-large{width:148px;height:148px;object-fit:cover;object-position:top center;border-radius:50%;border:4px solid #1685ff;box-shadow:0 0 0 7px #1685ff22;margin-bottom:10px}
+.promise-owner{justify-content:center}
+.product-visual{height:175px;padding:0;overflow:hidden;background:#edf3fa}
+.product-visual img{width:100%;height:100%;display:block;object-fit:cover}
+.cart-emoji{overflow:hidden}
+.cart-emoji img{width:100%;height:100%;object-fit:cover;border-radius:12px}
+@media(max-width:700px){.product-visual{height:125px}.owner-profile-large{width:130px;height:130px}}
+
+/* Category cards show a photograph rather than an emoji block */
+.service-image{overflow:hidden;padding:0}
+.service-image img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .45s ease}
+.service-card:hover .service-image img{transform:scale(1.06)}
