@@ -7,7 +7,9 @@ step, no backend and no paid API.
 ## What is included
 
 - Navy, white and orange responsive design (mobile-first)
-- Six service cards: parcels, cakes and gifts, shopping, errands, surprises, business
+- Twelve service cards with photos: parcels, cakes, flowers, gifts, shopping, groceries,
+  errands, food, pharmacy, laundry, birthday surprises and business runs
+- Photo gallery of the work handled, plus a real Lahore hero photograph
 - Booking form that prepares a pre-filled WhatsApp message
 - Payment preference selection: cash, COD, JazzCash, Easypaisa, bank transfer
 - How-it-works, payment, about, FAQ and contact sections
@@ -22,6 +24,8 @@ step, no backend and no paid API.
 | `styles.css` | Colours, layout and responsive rules |
 | `script.js` | Navigation, contact links and booking behaviour |
 | `config.js` | Business name and contact numbers |
+| `assets/img/` | Photographs used on the page (see `IMAGE-CREDITS.md`) |
+| `IMAGE-CREDITS.md` | Author and licence for every photograph |
 
 ## Contact numbers
 
@@ -67,6 +71,13 @@ on them for a business-critical service.
 - An order is not confirmed until you personally accept it and confirm
   availability, price and timing.
 - Cash on delivery is only available if you choose to offer it for that order.
+
+## Photographs
+
+Every image in `assets/img/` is a freely licensed photograph from Wikimedia Commons.
+`IMAGE-CREDITS.md` lists the author and licence for each one. CC BY and CC BY-SA images
+require that credit is kept, so keep that file with the site. To use your own photos,
+replace the files with the same names and a 4:3 aspect ratio.
 
 ## Security
 
