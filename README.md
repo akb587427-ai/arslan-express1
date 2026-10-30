@@ -1,50 +1,81 @@
 # Arslan Express Website
 
-A responsive, mobile-first single-page website for Arslan Express, a personal delivery and lifestyle service in Lahore.
+A responsive, single-page website for **Arslan Express**, a personal delivery and
+lifestyle service in Lahore. It is plain HTML, CSS and JavaScript with no build
+step, no backend and no paid API.
 
-## Included
-- Premium navy, white and orange design
-- Service cards for all six selected services
-- Booking form that prepares a WhatsApp message
-- Payment preference selection: Cash, COD (if agreed), JazzCash, Easypaisa and bank transfer
-- About, process, FAQs and contact sections
-- No backend or paid API required for the starter version
+## What is included
 
-## Contact numbers already configured
-- Main call and WhatsApp: **0339 4946993** (`923394946993`)
-- Alternate WhatsApp: **0349 3436993** (`923493436993`)
-- Booking form messages go to the main WhatsApp number.
-- The contact section includes a call link and an alternate WhatsApp link.
+- Navy, white and orange responsive design (mobile-first)
+- Six service cards: parcels, cakes and gifts, shopping, errands, surprises, business
+- Booking form that prepares a pre-filled WhatsApp message
+- Payment preference selection: cash, COD, JazzCash, Easypaisa, bank transfer
+- How-it-works, payment, about, FAQ and contact sections
+- Accessibility basics: skip link, visible focus ring, labelled controls, reduced-motion support
+- SEO and social meta tags plus LocalBusiness structured data
 
-To change these later, edit `config.js`. Keep numbers in international format without `+`, spaces or dashes. Do not put OTPs, passwords, payment PINs or private credentials in this file.
+## Files
+
+| File | Purpose |
+| --- | --- |
+| `index.html` | Page content and structure |
+| `styles.css` | Colours, layout and responsive rules |
+| `script.js` | Navigation, contact links and booking behaviour |
+| `config.js` | Business name and contact numbers |
+
+## Contact numbers
+
+| Purpose | Number |
+| --- | --- |
+| Call and main WhatsApp | **0339 4946993** (`923394946993`) |
+| Alternate WhatsApp | **0349 3436993** (`923493436993`) |
+
+Booking requests are sent to the main WhatsApp number. Edit `config.js` to change
+any of these. Keep numbers in international format without `+`, spaces or dashes.
+The `script.js` helper also accepts local `03XXXXXXXXX` form and converts it.
 
 ## Run locally
-Open `index.html` in a browser. For a local development server, use VS Code Live Server or any static file server. No build command is required.
 
-## Deploy free with Cloudflare Pages (Git integration)
-1. Upload the complete contents of this folder to a GitHub repository.
-2. In Cloudflare, open **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
-3. Connect GitHub and select your repository.
+Open `index.html` in a browser, or serve the folder with any static file server:
+
+```bash
+python3 -m http.server 8000
+```
+
+Then visit <http://localhost:8000>.
+
+## Deploy free with Cloudflare Pages
+
+1. Push the contents of this folder to a GitHub repository.
+2. In Cloudflare open **Workers & Pages** -> **Create** -> **Pages** -> **Connect to Git**.
+3. Select the repository.
 4. Framework preset: **None**.
 5. Build command: leave blank.
 6. Build output directory: `/` (root).
 7. Save and deploy.
 
-Cloudflare's free-plan quotas and features can change. Check the current plan limits before relying on them for a business-critical service.
+Cloudflare's free-plan quotas can change. Check the current limits before relying
+on them for a business-critical service.
 
-## Important booking and payment limitations
-- The booking form does **not** save orders in a database. It prepares a WhatsApp message and the customer must press Send.
+## Important limitations
+
+- The booking form does **not** save orders. It prepares a WhatsApp message and
+  the customer must press Send.
 - The website does **not** charge payments or verify transfers.
-- JazzCash, Easypaisa and bank transfer are payment preferences only. Share verified payment details privately after accepting the order.
-- Never publish your OTP, wallet PIN, bank login, CNIC, or private account credentials.
-- Do not describe an order as confirmed until you personally accept it and confirm availability, price and timing.
-- COD is only available if you choose to offer it for that order.
+- JazzCash, Easypaisa and bank transfer are payment preferences only. Share
+  verified payment details privately after accepting an order.
+- An order is not confirmed until you personally accept it and confirm
+  availability, price and timing.
+- Cash on delivery is only available if you choose to offer it for that order.
 
-## Customization
-- `config.js`: WhatsApp number and business details
-- `index.html`: page text, services and FAQ content
-- `styles.css`: colors, layout and responsive design
-- `script.js`: mobile navigation and WhatsApp booking behavior
+## Security
+
+`config.js` is public: it is served to every visitor. Never put OTPs, wallet PINs,
+bank logins, CNIC details or any private credentials in this file or anywhere
+else in this project. The published phone numbers are intentionally public.
 
 ## Future upgrades
-A database, secure admin login, saved order history, automatic status notifications and live GPS tracking require a backend and additional setup. They are not included in this static starter website.
+
+A database, secure admin login, saved order history, automatic status
+notifications and live tracking require a backend and are not part of this
+static starter site.

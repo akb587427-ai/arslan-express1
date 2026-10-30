@@ -1,92 +1,173 @@
+/*
+ * Arslan Express — site behaviour
+ * -------------------------------
+ * Responsibilities:
+ *   1. Resolve contact links from window.ARSLAN_CONFIG.
+ *   2. Drive the mobile navigation.
+ *   3. Turn the booking form into a pre-filled WhatsApp message.
+ *
+ * The site has no backend. Nothing is stored or submitted to a server:
+ * the booking form only prepares a message the visitor sends themselves.
+ */
 (() => {
+  "use strict";
+
   const config = window.ARSLAN_CONFIG || {};
-  const number = (config.whatsappNumber || "").replace(/\D/g, "");
-  const callNumber = (config.callNumber || "").replace(/\D/g, "");
-  const alternateNumber = (config.alternateWhatsappNumber || "").replace(/\D/g, "");
-  const validNumber = /^92\d{10}$/.test(number);
-  const validCallNumber = /^92\d{10}$/.test(callNumber);
-  const validAlternateNumber = /^92\d{10}$/.test(alternateNumber);
-  const waUrl = (targetNumber, message) => `https://wa.me/${targetNumber}?text=${encodeURIComponent(message)}`;
-  const defaultMessage = "Assalam-o-Alaikum Arslan Express. I would like to ask about your services in Lahore.";
-  const menuToggle = document.getElementById("menuToggle");
-  const nav = document.getElementById("mainNav");
-  menuToggle?.addEventListener("click", () => {
-    const opened = nav.classList.toggle("open");
-    menuToggle.setAttribute("aria-expanded", String(opened));
-    menuToggle.textContent = opened ? "×" : "☰";
-  });
-  nav?.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
-    nav.classList.remove("open");
-    menuToggle?.setAttribute("aria-expanded", "false");
-    if (menuToggle) menuToggle.textContent = "☰";
-  }));
+  const digits = (value) => String(value || "").replace(/\D/g, "");
 
-  ["bookingWhatsApp", "footerWhatsApp"].forEach(id => {
-    const link = document.getElementById(id);
+  /* Accepts Pakistani numbers in E.164 (923XXXXXXXXX) or local 03XXXXXXXXX form. */
+  const toE164 = (value) => {
+    const raw = digits(value);
+    if (/^92\d{10}$/.test(raw)) return raw;
+    if (/^0\d{10}$/.test(raw)) return `92${raw.slice(1)}`;
+    if (/^\d{10}$/.test(raw)) return `92${raw}`;
+    return "";
+  };
+
+  const primaryNumber = toE164(config.whatsappNumber);
+  const callNumber = toE164(config.callNumber);
+  const alternateNumber = toE164(config.alternateWhatsappNumber);
+  const businessName = config.businessName || "Arslan Express";
+  const greeting =
+    config.greeting || `Assalam-o-Alaikum ${businessName}. I would like to ask about your services.`;
+
+  const whatsappUrl = (target, message) =>
+    `https://wa.me/${target}?text=${encodeURIComponent(message)}`;
+
+  const byId = (id) => document.getElementById(id);
+
+  /* ---------------------------------------------------------------- links */
+
+  const setWhatsappLink = (id, target, message) => {
+    const link = byId(id);
     if (!link) return;
-    if (validNumber) link.href = waUrl(number, defaultMessage);
-    else {
-      link.href = "#booking";
-      link.addEventListener("click", e => {
-        e.preventDefault();
-        alert("Please add your WhatsApp number in config.js first.");
-      });
+    if (!target) {
+      link.hidden = true;
+      return;
     }
-  });
+    link.href = whatsappUrl(target, message);
+  };
 
-  const callLink = document.getElementById("callArslan");
-  if (callLink && validCallNumber) callLink.href = `tel:+${callNumber}`;
+  setWhatsappLink("bookingWhatsApp", primaryNumber, greeting);
+  setWhatsappLink("footerWhatsApp", primaryNumber, greeting);
+  setWhatsappLink("alternateWhatsApp", alternateNumber, greeting);
 
-  const alternateLink = document.getElementById("alternateWhatsApp");
-  if (alternateLink && validAlternateNumber) {
-    alternateLink.href = waUrl(alternateNumber, defaultMessage);
+  const callLink = byId("callArslan");
+  if (callLink) {
+    if (callNumber) callLink.href = `tel:+${callNumber}`;
+    else callLink.hidden = true;
   }
 
-  document.querySelectorAll("[data-service]").forEach(link => {
+  /* ----------------------------------------------------------- navigation */
+
+  const menuToggle = byId("menuToggle");
+  const nav = byId("mainNav");
+
+  if (menuToggle && nav) {
+    const setMenu = (open) => {
+      nav.classList.toggle("open", open);
+      menuToggle.setAttribute("aria-expanded", String(open));
+      menuToggle.textContent = open ? "\u00d7" : "\u2630";
+    };
+
+    menuToggle.addEventListener("click", () =>
+      setMenu(!nav.classList.contains("open"))
+    );
+
+    nav.querySelectorAll("a").forEach((link) =>
+      link.addEventListener("click", () => setMenu(false))
+    );
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && nav.classList.contains("open")) {
+        setMenu(false);
+        menuToggle.focus();
+      }
+    });
+
+    /* Keep the button state correct when the viewport grows back to desktop. */
+    window.matchMedia("(min-width: 651px)").addEventListener("change", (event) => {
+      if (event.matches) setMenu(false);
+    });
+  }
+
+  /* ------------------------------------------------- service pre-selection */
+
+  const serviceSelect = byId("serviceSelect");
+  document.querySelectorAll("[data-service]").forEach((link) => {
     link.addEventListener("click", () => {
-      const select = document.getElementById("serviceSelect");
-      if (select) select.value = link.dataset.service;
+      if (!serviceSelect) return;
+      const requested = link.dataset.service;
+      const match = [...serviceSelect.options].find((option) => option.value === requested);
+      if (match) serviceSelect.value = requested;
     });
   });
 
-  const dateInput = document.getElementById("bookingDate");
+  /* -------------------------------------------------------------- booking */
+
+  const dateInput = byId("bookingDate");
   if (dateInput) {
-    const today = new Date();
-    const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    const now = new Date();
+    const localToday = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 10);
     dateInput.min = localToday;
   }
-  document.getElementById("year").textContent = new Date().getFullYear();
 
-  const form = document.getElementById("bookingForm");
-  form?.addEventListener("submit", event => {
-    event.preventDefault();
-    const status = document.getElementById("formMessage");
-    if (!validNumber) {
-      status.textContent = "Setup required: add your real WhatsApp number in config.js (format: 923001234567), then publish again.";
-      status.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
-    const data = new FormData(form);
-    const fields = [
-      "Assalam-o-Alaikum Arslan Express! I want to request a booking.",
-      "",
-      `Name: ${data.get("name")}`,
-      `Phone: ${data.get("phone")}`,
-      `Service: ${data.get("service")}`,
-      `Pickup: ${data.get("pickup")}`,
-      `Drop-off: ${data.get("dropoff") || "Not specified"}`,
-      `Preferred date: ${data.get("date") || "Flexible"}`,
-      `Preferred time: ${data.get("time") || "Flexible"}`,
-      `Payment preference: ${data.get("payment")}`,
-      `Details: ${data.get("details") || "Not specified"}`,
-      "",
-      "Please confirm availability, final charges and booking details. I understand this is a request, not a confirmed booking."
-    ];
-    if (document.getElementById("referencePhoto")?.files?.length) {
-      fields.push("I have a reference photo and will attach it in this WhatsApp chat.");
-    }
-    const message = fields.join("\n");
-    window.open(waUrl(number, message), "_blank", "noopener,noreferrer");
-    status.textContent = "WhatsApp is opening with your booking details. Review the message and press Send in WhatsApp. Attach any reference photo there.";
-  });
+  const yearSlot = byId("year");
+  if (yearSlot) yearSlot.textContent = String(new Date().getFullYear());
+
+  const form = byId("bookingForm");
+  const status = byId("formMessage");
+
+  const setStatus = (message, isError = false) => {
+    if (!status) return;
+    status.textContent = message;
+    status.classList.toggle("form-message--error", isError);
+    status.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  if (form) {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      if (!primaryNumber) {
+        setStatus(
+          "Booking is temporarily unavailable: the WhatsApp number is not configured in config.js.",
+          true
+        );
+        return;
+      }
+
+      const data = new FormData(form);
+      const value = (key, fallback = "Not specified") =>
+        String(data.get(key) || "").trim() || fallback;
+
+      const lines = [
+        `Assalam-o-Alaikum ${businessName}! I would like to request a booking.`,
+        "",
+        `Name: ${value("name")}`,
+        `Phone: ${value("phone")}`,
+        `Service: ${value("service")}`,
+        `Pickup: ${value("pickup")}`,
+        `Drop-off: ${value("dropoff")}`,
+        `Preferred date: ${value("date", "Flexible")}`,
+        `Preferred time: ${value("time", "Flexible")}`,
+        `Payment preference: ${value("payment")}`,
+        `Details: ${value("details")}`,
+        "",
+        "Please confirm availability, final charges and booking details.",
+        "I understand this is a request, not a confirmed booking."
+      ];
+
+      if (byId("referencePhoto")?.files?.length) {
+        lines.splice(-2, 0, "I have a reference photo and will attach it in this chat.");
+      }
+
+      window.open(whatsappUrl(primaryNumber, lines.join("\n")), "_blank", "noopener,noreferrer");
+      setStatus(
+        "WhatsApp is opening with your details. Review the message and press Send. Attach any reference photo in the chat."
+      );
+    });
+  }
 })();
